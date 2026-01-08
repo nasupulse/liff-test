@@ -2,32 +2,39 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>LIFF Init Test</title>
+  <title>姿勢撮影</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
-  <h2>LIFF 初期化テスト</h2>
+  <h2>カメラ起動テスト</h2>
+  <video id="video" autoplay playsinline width="300"></video>
   <p id="status">loading...</p>
 
   <script>
     async function main() {
       try {
-        await liff.init({
-          liffId: "2008850895-GKh4kFcG"
-        });
+        await liff.init({ liffId: "2008850895-GKh4kFcG" });
 
         if (!liff.isInClient()) {
           document.getElementById("status").innerText =
-            "LIFFは外部ブラウザで開かれています";
+            "LINEアプリ内で開いてください";
           return;
         }
 
-        document.getElementById("status").innerText =
-          "LIFF 初期化成功（LINE内）";
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user"
+          },
+          audio: false
+        });
+
+        document.getElementById("video").srcObject = stream;
+        document.getElementById("status").innerText = "カメラ起動成功";
 
       } catch (err) {
         document.getElementById("status").innerText =
-          "LIFF 初期化失敗: " + JSON.stringify(err);
+          "エラー: " + err.name;
+        console.error(err);
       }
     }
 
