@@ -11,7 +11,7 @@
   <video id="video" autoplay playsinline width="300"></video>
   <br>
 
-  <button id="startBtn">録画開始</button>
+  <button id="startBtn" disabled>録画開始</button>
   <button id="stopBtn" disabled>録画停止</button>
 
   <p id="status">準備中...</p>
@@ -22,8 +22,10 @@
 
     async function main() {
       try {
+        // ① LIFF初期化
         await liff.init({ liffId: "2008850895-GKh4kFcG" });
 
+        // ② カメラ取得
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
           audio: false
@@ -31,6 +33,7 @@
 
         document.getElementById("video").srcObject = stream;
 
+        // ③ MediaRecorder 作成
         mediaRecorder = new MediaRecorder(stream, {
           mimeType: "video/webm"
         });
@@ -52,26 +55,12 @@
           a.download = "record.webm";
           a.click();
 
-          document.getElementById("status").innerText =
-            "録画完了（保存されました）";
-
           recordedChunks = [];
+          document.getElementById("status").innerText = "録画完了";
         };
 
+        // ④ ここで初めて操作可能にする
+        document.getElementById("startBtn").disabled = false;
+        document.getElementById("status").innerText = "録画準備完了";
+
       } catch (err) {
-        document.getElementById("status").innerText =
-          "エラー: " + err.name;
-      }
-    }
-
-    document.getElementById("startBtn").onclick = () => {
-      mediaRecorder.start();
-      document.getElementById("status").innerText = "録画中...";
-      document.getElementById("startBtn").disabled = true;
-      document.getElementById("stopBtn").disabled = false;
-    };
-
-    document.getElementById("stopBtn").onclick = () => {
-      mediaRecorder.stop();
-      document.getElementById("startBtn").disabled = false;
-      document.getElementById("stopBtn").disabled = true;
