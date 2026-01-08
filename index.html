@@ -1,8 +1,21 @@
-<canvas id="canvas" width="300" height="400" style="display:none;"></canvas>
-<p id="status">準備中...</p>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>姿勢撮影</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+
+<h3 id="status">準備中...</h3>
+
+<video id="video" autoplay playsinline width="300"></video>
+<canvas id="canvas" width="300" height="400"
+        style="position:absolute; top:80px; left:0;"></canvas>
 
 <script>
-  async function main() {
+async function main() {
+  try {
     await liff.init({ liffId: "2008850895-GKh4kFcG" });
 
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -13,17 +26,33 @@
     const video = document.getElementById("video");
     video.srcObject = stream;
 
+    document.getElementById("status").innerText = "カメラ取得完了";
+
+    // 描画テスト（骨格の代わり）
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    document.getElementById("status").innerText = "フレーム取得中";
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(150, 50);
+      ctx.lineTo(150, 200);
+      ctx.stroke();
+      requestAnimationFrame(draw);
+    }
 
-    setInterval(() => {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageBase64 = canvas.toDataURL("image/jpeg");
-      console.log(imageBase64.substring(0, 50)); // 確認用
-    }, 1000);
+    draw();
+
+  } catch (e) {
+    document.getElementById("status").innerText = "エラー: " + e.name;
+    console.error(e);
   }
+}
 
-  main();
+main();
 </script>
+
+</body>
+</html>
