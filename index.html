@@ -2,10 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>姿勢撮影（背面カメラ）</title>
-
-  <!-- LIFF -->
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <title>姿勢撮影（Safari用）</title>
 
   <!-- MediaPipe Pose -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
@@ -13,10 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-    }
+    body { margin: 0; }
     #container {
       position: relative;
       width: 600px;
@@ -32,7 +26,7 @@
 
 <body>
 
-<h3 id="status">準備中...</h3>
+<h3>背面カメラで姿勢撮影</h3>
 
 <div id="container">
   <video id="video" autoplay playsinline width="600" height="800"></video>
@@ -41,76 +35,52 @@
 
 <script>
 async function main() {
-  try {
-    // ① LIFF 初期化
-    await liff.init({ liffId: "2008850895-GKh4kFcG" });
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: { exact: "environment" }, // ← Safariならほぼ確実
+      width: { ideal: 600 },
+      height: { ideal: 800 }
+    },
+    audio: false
+  });
 
-    // ② 背面カメラ取得（iPhone対応）
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: "environment",   // ← 背面カメラ指定
-        width: { ideal: 600 },
-        height: { ideal: 800 }
-      },
-      audio: false
-    });
+  const video = document.getElementById("video");
+  video.srcObject = stream;
 
-    const video = document.getElementById("video");
-    video.srcObject = stream;
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
 
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+  const pose = new Pose({
+    locateFile: file =>
+      `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+  });
 
-    document.getElementById("status").innerText = "姿勢推定中（背面カメラ）";
+  pose.setOptions({
+    modelComplexity: 0,
+    smoothLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
 
-    // ③ MediaPipe Pose
-    const pose = new Pose({
-      locateFile: file =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-    });
+  pose.onResults(results => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (results.poseLandmarks) {
+      drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
+        { color: '#00FF00', lineWidth: 3 });
+      drawLandmarks(ctx, results.poseLandmarks,
+        { color: '#FF0000', lineWidth: 2 });
+    }
+  });
 
-    pose.setOptions({
-      modelComplexity: 0,      // 軽量
-      smoothLandmarks: true,
-      enableSegmentation: false,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
-    });
+  const camera = new Camera(video, {
+    onFrame: async () => {
+      await pose.send({ image: video });
+    },
+    width: 600,
+    height: 800
+  });
 
-    pose.onResults(results => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (results.poseLandmarks) {
-        drawConnectors(
-          ctx,
-          results.poseLandmarks,
-          POSE_CONNECTIONS,
-          { color: '#00FF00', lineWidth: 3 }
-        );
-        drawLandmarks(
-          ctx,
-          results.poseLandmarks,
-          { color: '#FF0000', lineWidth: 2 }
-        );
-      }
-    });
-
-    // ④ カメラ起動
-    const camera = new Camera(video, {
-      onFrame: async () => {
-        await pose.send({ image: video });
-      },
-      width: 600,
-      height: 800
-    });
-
-    camera.start();
-
-  } catch (e) {
-    document.getElementById("status").innerText =
-      "エラー: " + e.name;
-    console.error(e);
-  }
+  camera.start();
 }
 
 main();
