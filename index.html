@@ -6,39 +6,72 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
-  <h2>カメラ起動テスト</h2>
+  <h2>録画テスト</h2>
+
   <video id="video" autoplay playsinline width="300"></video>
-  <p id="status">loading...</p>
+  <br>
+
+  <button id="startBtn">録画開始</button>
+  <button id="stopBtn" disabled>録画停止</button>
+
+  <p id="status">準備中...</p>
 
   <script>
+    let mediaRecorder;
+    let recordedChunks = [];
+
     async function main() {
       try {
         await liff.init({ liffId: "2008850895-GKh4kFcG" });
 
-        if (!liff.isInClient()) {
-          document.getElementById("status").innerText =
-            "LINEアプリ内で開いてください";
-          return;
-        }
-
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user"
-          },
+          video: { facingMode: "user" },
           audio: false
         });
 
         document.getElementById("video").srcObject = stream;
-        document.getElementById("status").innerText = "カメラ起動成功";
+
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: "video/webm"
+        });
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0) {
+            recordedChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, {
+            type: "video/webm"
+          });
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "record.webm";
+          a.click();
+
+          document.getElementById("status").innerText =
+            "録画完了（保存されました）";
+
+          recordedChunks = [];
+        };
 
       } catch (err) {
         document.getElementById("status").innerText =
           "エラー: " + err.name;
-        console.error(err);
       }
     }
 
-    main();
-  </script>
-</body>
-</html>
+    document.getElementById("startBtn").onclick = () => {
+      mediaRecorder.start();
+      document.getElementById("status").innerText = "録画中...";
+      document.getElementById("startBtn").disabled = true;
+      document.getElementById("stopBtn").disabled = false;
+    };
+
+    document.getElementById("stopBtn").onclick = () => {
+      mediaRecorder.stop();
+      document.getElementById("startBtn").disabled = false;
+      document.getElementById("stopBtn").disabled = true;
