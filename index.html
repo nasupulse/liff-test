@@ -2,19 +2,36 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>LIFF Test</title>
+  <title>LIFF Init Test</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
-  <h2>LIFF SDK 確認</h2>
+  <h2>LIFF 初期化テスト</h2>
   <p id="status">loading...</p>
 
   <script>
-    if (typeof liff === "undefined") {
-      document.getElementById("status").innerText = "LIFF SDK が読み込まれていません";
-    } else {
-      document.getElementById("status").innerText = "LIFF SDK 読み込みOK";
+    async function main() {
+      try {
+        await liff.init({
+          liffId: "2008850895-GKh4kFcG"
+        });
+
+        if (!liff.isInClient()) {
+          document.getElementById("status").innerText =
+            "LIFFは外部ブラウザで開かれています";
+          return;
+        }
+
+        document.getElementById("status").innerText =
+          "LIFF 初期化成功（LINE内）";
+
+      } catch (err) {
+        document.getElementById("status").innerText =
+          "LIFF 初期化失敗: " + JSON.stringify(err);
+      }
     }
+
+    main();
   </script>
 </body>
 </html>
