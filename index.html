@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>姿勢撮影</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+  <h2>LIFF 動作確認</h2>
+  <p id="status">未初期化</p>
+
+  <script>
+    async function init() {
+      try {
+        await liff.init({ liffId: "2008850895-a2yoeGGB" });
+        document.getElementById("status").innerText = "LIFF 初期化成功";
+      } catch (e) {
+        document.getElementById("status").innerText = "初期化失敗";
+        console.error(e);
+      }
+    }
+    init();
+  </script>
+</body>
+</html>
