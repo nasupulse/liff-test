@@ -1,66 +1,29 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>姿勢撮影</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-</head>
-<body>
-  <h2>録画テスト</h2>
+<canvas id="canvas" width="300" height="400" style="display:none;"></canvas>
+<p id="status">準備中...</p>
 
-  <video id="video" autoplay playsinline width="300"></video>
-  <br>
+<script>
+  async function main() {
+    await liff.init({ liffId: "2008850895-GKh4kFcG" });
 
-  <button id="startBtn" disabled>録画開始</button>
-  <button id="stopBtn" disabled>録画停止</button>
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: false
+    });
 
-  <p id="status">準備中...</p>
+    const video = document.getElementById("video");
+    video.srcObject = stream;
 
-  <script>
-    let mediaRecorder;
-    let recordedChunks = [];
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
-    async function main() {
-      try {
-        // ① LIFF初期化
-        await liff.init({ liffId: "2008850895-GKh4kFcG" });
+    document.getElementById("status").innerText = "フレーム取得中";
 
-        // ② カメラ取得
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" },
-          audio: false
-        });
+    setInterval(() => {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageBase64 = canvas.toDataURL("image/jpeg");
+      console.log(imageBase64.substring(0, 50)); // 確認用
+    }, 1000);
+  }
 
-        document.getElementById("video").srcObject = stream;
-
-        // ③ MediaRecorder 作成
-        mediaRecorder = new MediaRecorder(stream, {
-          mimeType: "video/webm"
-        });
-
-        mediaRecorder.ondataavailable = e => {
-          if (e.data.size > 0) {
-            recordedChunks.push(e.data);
-          }
-        };
-
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(recordedChunks, {
-            type: "video/webm"
-          });
-
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "record.webm";
-          a.click();
-
-          recordedChunks = [];
-          document.getElementById("status").innerText = "録画完了";
-        };
-
-        // ④ ここで初めて操作可能にする
-        document.getElementById("startBtn").disabled = false;
-        document.getElementById("status").innerText = "録画準備完了";
-
-      } catch (err) {
+  main();
+</script>
